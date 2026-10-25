@@ -15,6 +15,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class SecurityConfig {
 
+  private final RestAuthenticationEntryPoint authenticationEntryPoint;
+
+  private final RestAccessDeniedHandler accessDeniedHandler;
+
+  public SecurityConfig(RestAuthenticationEntryPoint authenticationEntryPoint, RestAccessDeniedHandler accessDeniedHandler) {
+    this.authenticationEntryPoint = authenticationEntryPoint;
+    this.accessDeniedHandler = accessDeniedHandler;
+  }
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -31,6 +39,10 @@ public class SecurityConfig {
                     .authenticationEntryPoint(
                         new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
                     )
+                )
+            .exceptionHandling(exceptions -> exceptions
+              .authenticationEntryPoint(authenticationEntryPoint)
+              .accessDeniedHandler(accessDeniedHandler)
                 )
             .authorizeHttpRequests(c -> c
                 .requestMatchers(
