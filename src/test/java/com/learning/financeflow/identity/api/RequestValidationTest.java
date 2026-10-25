@@ -49,6 +49,16 @@ class RequestValidationTest {
     }
 
     @Test
+    void registerRequestRejectsMissingBlankAndOverlongDisplayName() {
+        assertTrue(validator.validate(new RegisterRequest("user@example.com", "long-password", null))
+                .stream().anyMatch(error -> error.getPropertyPath().toString().equals("displayName")));
+        assertTrue(validator.validate(new RegisterRequest("user@example.com", "long-password", " "))
+                .stream().anyMatch(error -> error.getPropertyPath().toString().equals("displayName")));
+        assertTrue(validator.validate(new RegisterRequest("user@example.com", "long-password", "x".repeat(101)))
+                .stream().anyMatch(error -> error.getPropertyPath().toString().equals("displayName")));
+    }
+
+    @Test
     void loginRequestRequiresValidEmailAndNonblankPassword() {
         var errors = validator.validate(new LoginRequest("", " "));
 

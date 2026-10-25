@@ -1,6 +1,7 @@
 package com.learning.financeflow.identity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.learning.financeflow.identity.security.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -8,6 +9,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import java.util.UUID;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 @SpringBootTest @AutoConfigureMockMvc @ActiveProfiles("test")
@@ -41,11 +43,24 @@ class AuthIntegrationTest {
       .andExpect(jsonPath("$.status").value("UP"));
   }
 
-  @Test void protectedEndpointRejectsInvalidJwt() throws Exception {
+  @Test void protectedEndpointRejectsAuthorizationHeaderWithoutBearerScheme() throws Exception {
     mvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer not-a-valid-jwt"))
       .andExpect(status().isUnauthorized())
       .andExpect(jsonPath("$.status").value(401))
       .andExpect(jsonPath("$.path").value("/api/v1/users/me"));
+  }
+
+  @Test void protectedEndpointRejectsJwtWithInvalidSignature() throws Exception {
+    String otherTestOnlySecret = java.util.Base64.getEncoder().encodeToString(
+      "different-integration-test-key-which-is-long-enough".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    String invalidToken = new JwtService(otherTestOnlySecret, 3600000)
+      .issueToken(UUID.randomUUID(), "attacker@example.test", "USER");
+
+    mvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer " + invalidToken))
+      .andExpect(status().isUnauthorized())
+      .andExpect(jsonPath("$.status").value(401))
+      .andExpect(jsonPath("$.path").value("/api/v1/users/me"))
+      .andExpect(jsonPath("$.message").value("Authentication is required or the token is invalid"));
   }
 
   @Test void authenticationEndpointsArePublicAndValidateMalformedBodies() throws Exception {
