@@ -34,4 +34,41 @@ class AuthIntegrationTest {
   @Test void profileRequiresAuthentication() throws Exception {
     mvc.perform(get("/api/v1/users/me")).andExpect(status().isUnauthorized());
   }
+
+  @Test void healthEndpointIsPublic() throws Exception {
+    mvc.perform(get("/actuator/health"))
+      .andExpect(status().isOk())
+      .andExpect(jsonPath("$.status").value("UP"));
+  }
+
+  @Test void protectedEndpointRejectsInvalidJwt() throws Exception {
+    mvc.perform(get("/api/v1/users/me").header("Authorization", "Bearer not-a-valid-jwt"))
+      .andExpect(status().isUnauthorized())
+      .andExpect(jsonPath("$.status").value(401))
+      .andExpect(jsonPath("$.path").value("/api/v1/users/me"));
+  }
+
+  @Test void authenticationEndpointsArePublicAndValidateMalformedBodies() throws Exception {
+    mvc.perform(post("/api/v1/auth/register")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{"))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.message").value("Invalid or malformed JSON request"));
+
+    mvc.perform(post("/api/v1/auth/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(""))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.message").value("Invalid or malformed JSON request"));
+  }
+
+  @Test void registrationRejectsInvalidRequestFields() throws Exception {
+    mvc.perform(post("/api/v1/auth/register")
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("{\"email\":\"invalid\",\"password\":\"short\",\"displayName\":\"Test\"}"))
+      .andExpect(status().isBadRequest())
+      .andExpect(jsonPath("$.status").value(400))
+      .andExpect(jsonPath("$.path").value("/api/v1/auth/register"))
+      .andExpect(jsonPath("$.message").isNotEmpty());
+  }
 }
