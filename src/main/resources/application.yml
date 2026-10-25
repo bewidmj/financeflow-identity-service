@@ -20,7 +20,9 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET}
+    private-key-location: ${JWT_PRIVATE_KEY_LOCATION}
+    key-id: ${JWT_KEY_ID}
+    additional-public-keys: ${JWT_ADDITIONAL_PUBLIC_KEYS:}
     expiration-ms: ${JWT_EXPIRATION_MS:3600000}
 
 management:
@@ -31,4 +33,4 @@ management:
 
 logging:
   level:
-    org.springframework.security: TRACE
+    org.springframework.security: INFO

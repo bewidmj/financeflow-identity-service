@@ -47,6 +47,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(c -> c
                 .requestMatchers(
                     "/api/v1/auth/**",
+                    "/.well-known/jwks.json",
                     "/actuator/health",
                     "/swagger-ui/**",
                     "/swagger-ui.html",

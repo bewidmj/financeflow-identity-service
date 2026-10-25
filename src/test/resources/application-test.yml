@@ -10,5 +10,4 @@ spring:
     open-in-view: false
 app:
   jwt:
-    secret: dGVzdC1zZWNyZXQtdGhhdC1pcy1hdC1sZWFzdC0zMi1ieXRlcy1sb25n
     expiration-ms: 3600000
