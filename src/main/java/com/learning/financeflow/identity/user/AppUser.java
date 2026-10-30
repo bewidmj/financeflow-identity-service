@@ -15,6 +15,11 @@ public class AppUser {
   public AppUser(String email, String passwordHash, String displayName) {
     this.email=email; this.passwordHash=passwordHash; this.displayName=displayName; this.role="USER";
   }
+  public static AppUser admin(String email, String passwordHash, String displayName) {
+    AppUser user = new AppUser(email, passwordHash, displayName);
+    user.role = "ADMIN";
+    return user;
+  }
   @PrePersist void onCreate() { if (createdAt==null) createdAt=Instant.now(); }
   public UUID getId(){return id;} public String getEmail(){return email;}
   public String getPasswordHash(){return passwordHash;} public String getDisplayName(){return displayName;}

@@ -32,6 +32,32 @@ export JWT_KEY_ID="financeflow-local-2026-01"
 export JWT_EXPIRATION_MS=3600000
 ```
 
+### Provisioning a local administrator
+
+Public registration always creates a `USER`. To provision a local development
+administrator, supply an email and a strong password through the Identity
+Service process environment before startup. The bootstrap creates the account
+only if the email does not exist, stores a BCrypt hash, and never resets an
+existing admin password. If the email already belongs to a regular account,
+startup fails rather than silently elevating it. Keep the password out of
+source control, shell history, and logs; use a private prompt or secret manager:
+
+```bash
+export SPRING_PROFILES_ACTIVE=local
+export ADMIN_BOOTSTRAP_EMAIL="admin@example.test"
+read -s -p "Local admin password: " ADMIN_BOOTSTRAP_PASSWORD
+echo
+export ADMIN_BOOTSTRAP_PASSWORD
+export ADMIN_BOOTSTRAP_DISPLAY_NAME="Local administrator"
+```
+
+The bootstrap password must be at least 16 characters and at most 72 UTF-8
+bytes. Remove the bootstrap environment variables after provisioning; the
+account remains in the database. Start the service using the command below.
+After its first startup, stop it and unset the bootstrap environment variables
+before subsequent starts. Role changes and account deactivation are not exposed
+by the service.
+
 Optional rotation overlap keys use comma-separated `kid=file:` public-key locations:
 
 ```bash
@@ -51,10 +77,17 @@ It listens on port `8081`. The FinanceFlow API listens on port `8080`.
 - Register: `POST http://localhost:8081/api/v1/auth/register`
 - Login: `POST http://localhost:8081/api/v1/auth/login`
 - Profile: `GET http://localhost:8081/api/v1/users/me`
+- Admin overview: `GET http://localhost:8081/api/v1/admin/overview` (`ADMIN`)
+- Search users: `GET http://localhost:8081/api/v1/admin/users` (`ADMIN`)
+- User details: `GET http://localhost:8081/api/v1/admin/users/{id}` (`ADMIN`)
 - Public JWKS: `GET http://localhost:8081/.well-known/jwks.json`
 - Health: `GET http://localhost:8081/actuator/health`
 
 Login continues to return `accessToken`, `tokenType`, and `expiresInSeconds`. New tokens use `RS256`, a stable `kid`, and the existing `sub` (user UUID), `email`, `role`, `iat`, and configured `exp` claims.
+Admin endpoints return only account ID, email, display name, role, and creation
+time; password hashes are never included. Search and user lists are paginated.
+FinanceFlow separately enforces the same signed role claim for admin-only
+transaction browsing.
 
 To inspect only the token algorithm and key ID without printing the token:
 
